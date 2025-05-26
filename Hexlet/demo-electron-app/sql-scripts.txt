@@ -1,0 +1,109 @@
+-- Создаем таблицу партнеров
+
+CREATE TABLE partners (
+    id SERIAL PRIMARY KEY,
+    partner_type VARCHAR(5) NOT NULL,
+    name VARCHAR(40) NOT NULL UNIQUE,
+    manager VARCHAR(40),
+    email VARCHAR(40),
+    phone VARCHAR(15),
+    address TEXT,
+    ITN VARCHAR(12) NOT NULL UNIQUE,
+    rating INTEGER
+);
+
+-- Создаем таблицу продуктов (каталог всех возможных продуктов)
+
+CREATE TABLE products (
+    id SERIAL PRIMARY KEY,
+    product_name VARCHAR(100) NOT NULL UNIQUE
+);
+
+-- Создаем таблицу продаж (связь между партнерами и продуктами)
+
+CREATE TABLE sales (
+    id SERIAL PRIMARY KEY,
+    product_id INTEGER NOT NULL,
+    partner_id INTEGER NOT NULL,
+    quantity NUMERIC NOT NULL CHECK (quantity > 0),
+    sale_date TIMESTAMP NOT NULL,
+    CONSTRAINT fk_product
+        FOREIGN KEY (product_id) 
+        REFERENCES products(id)
+        ON DELETE RESTRICT,
+    CONSTRAINT fk_partner
+        FOREIGN KEY (partner_id) 
+        REFERENCES partners(id)
+        ON DELETE RESTRICT
+);
+
+-- Вставка данных в таблицу partners
+INSERT INTO partners (partner_type, name, manager, email, phone, address, ITN, rating)
+VALUES 
+('ЗАО', 'База Стройтель', 'Иванова Александра Ивановна', 'aleksandraivanova@ml.ru', '493 123 45 67', '652050, Кемеровская область, город Юрга, ул. Лесная, 15', '2222455179', 7),
+('ООО', 'Паркет 29', 'Петров Василий Петрович', 'vppetrov@vl.ru', '987 123 56 78', '164500, Архангельская область, город Северодвинск, ул. Строителей, 18', '3333888520', 7),
+('ПАО', 'Стройсервис', 'Соловьев Андрей Николаевич', 'ansolovev@st.ru', '812 223 32 00', '188910, Ленинградская область, город Приморск, ул. Парковая, 21', '4440391035', 7),
+('ОАО', 'Ремонт и отделка', 'Воробьева Екатерина Валерьевна', 'ekaterina.vorobeva@ml.ru', '444 222 33 11', '143960, Московская область, город Реутов, ул. Свободы, 51', '1111520857', 5),
+('ЗАО', 'МонтажПро', 'Степанов Степан Сергеевич', 'stepanov@stepan.ru', '912 888 33 33', '309500, Белгородская область, город Старый Оскол, ул. Рабочая, 122', '5552431140', 10);
+
+INSERT INTO products (product_name)
+VALUES 
+('Паркетная доска Ясень темный однополосная 14 мм'),
+('Ламинат Дуб дымчато-белый 33 класс 12 мм'),
+('Ламинат Дуб серый 32 класс 8 мм с фаской'),
+('Инженерная доска Дуб Французская елка однополосная 12 мм'),
+('Пробковое напольное клеевое покрытие 32 класс 4 мм');
+
+-- Вставка данных о продажах
+INSERT INTO sales (product_id, partner_id, quantity, sale_date)
+SELECT 
+    p.id, 
+    pt.id, 
+    pp.quantity, 
+    pp.sale_date::TIMESTAMP
+FROM 
+    (VALUES
+        ('Паркетная доска Ясень темный однополосная 14 мм', 'База Строитель', 15500, '2023-03-23 00:00:00'),
+        ('Ламинат Дуб дымчато-белый 33 класс 12 мм', 'База Строитель', 12350, '2023-12-18 00:00:00'),
+        ('Ламинат Дуб серый 32 класс 8 мм с фаской', 'База Строитель', 37400, '2024-06-07 00:00:00'),
+        ('Инженерная доска Дуб Французская елка однополосная 12 мм', 'Паркет 29', 35000, '2022-12-02 00:00:00'),
+        ('Пробковое напольное клеевое покрытие 32 класс 4 мм', 'Паркет 29', 1250, '2023-05-17 00:00:00'),
+        ('Ламинат Дуб дымчато-белый 33 класс 12 мм', 'Паркет 29', 1000, '2024-06-07 00:00:00'),
+        ('Паркетная доска Ясень темный однополосная 14 мм', 'Паркет 29', 7550, '2024-07-01 00:00:00'),
+        ('Паркетная доска Ясень темный однополосная 14 мм', 'Стройсервис', 7250, '2023-01-22 00:00:00'),
+        ('Инженерная доска Дуб Французская елка однополосная 12 мм', 'Стройсервис', 2500, '2024-07-05 00:00:00'),
+        ('Ламинат Дуб серый 32 класс 8 мм с фаской', 'Ремонт и отделка', 59050, '2023-03-20 00:00:00'),
+        ('Ламинат Дуб дымчато-белый 33 класс 12 мм', 'Ремонт и отделка', 37200, '2024-03-12 00:00:00'),
+        ('Пробковое напольное клеевое покрытие 32 класс 4 мм', 'Ремонт и отделка', 4500, '2024-05-14 00:00:00'),
+        ('Ламинат Дуб дымчато-белый 33 класс 12 мм', 'МонтажПро', 50000, '2023-09-19 00:00:00'),
+        ('Ламинат Дуб серый 32 класс 8 мм с фаской', 'МонтажПро', 670000, '2023-11-10 00:00:00'),
+        ('Паркетная доска Ясень темный однополосная 14 мм', 'МонтажПро', 35000, '2024-04-15 00:00:00'),
+        ('Инженерная доска Дуб Французская елка однополосная 12 мм', 'МонтажПро', 25000, '2024-06-12 00:00:00')
+    ) AS pp(product, partner_name, quantity, sale_date)
+JOIN products p ON p.product_name = pp.product
+JOIN partners pt ON pt.name = pp.partner_name;
+
+-- Функция для расчета скидки партнера
+CREATE OR REPLACE FUNCTION calculate_partner_discount(partner_id integer)
+RETURNS integer AS $$
+DECLARE
+    total_sales numeric;
+    discount integer;
+BEGIN
+    SELECT COALESCE(SUM(quantity), 0) INTO total_sales
+    FROM sales
+    WHERE sales.partner_id = calculate_partner_discount.partner_id;
+    
+    IF total_sales > 300000 THEN
+        discount := 15;
+    ELSIF total_sales > 50000 THEN
+        discount := 10;
+    ELSIF total_sales > 10000 THEN
+        discount := 5;
+    ELSE
+        discount := 0;
+    END IF;
+    
+    RETURN discount;
+END;
+$$ LANGUAGE plpgsql;
